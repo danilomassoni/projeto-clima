@@ -5,7 +5,7 @@ from database.db_connection import connect_to_postgresql
 from database.data_operations import fetch_weather_data_from_db, insert_weather_data
 from models.regression_model import train_regression_model
 from visualizations.plot_utils import plot_real_vs_predicted
-
+from datetime import datetime
 
 def main():
     # Conectar com o banco de dados PostgreSQL
@@ -41,6 +41,32 @@ def main():
 
     # 4 Treinar o modelo de regressão
     if not df.empty:
+        # Adicionar a coluna 'dia do ano'
+        df['data_consulta'] = pd.to_datetime(df['data_consulta'], errors='coerce')
+        df['dia_do_ano'] = df['data_consulta'].dt.dayofyear
+
+        # Garantir que as colunas de entrada (umidade e dia_do_ano) são númericas
+        df['umidade'] = pd.to_numeric(df['umidade'], errors='coerce')
+        df['dia_do_ano'] = pd.to_numeric(df['dia_do_ano'], errors='coerce')
+
+        # Remover linhas com valores ausentes, se houver
+        df = df.dropna(subset=['umidade', 'dia_do_ano'])
+
+        # Verificar os tipos da coluna 
+        print(df.dtypes)
+
+        # Vericiar os tipos da coluna e amostra dos dados
+        print("Tipos de dados das colunas:", df.dtypes)
+        print("Amostra dos dados:", df.head())
+
+        if df.empty:
+            print("Não há dados suficientes para treinar o modelo")
+            return
+
+        # Verificar os tipos da scolunas 
+        print(df.dtypes)
+
+
         print("Treinando modelo de regressão")
         modelo, score = train_regression_model(df)
         print(f"Modelo treinado com sucesso! Acurácia do modelo: {score:.2f}")
@@ -55,7 +81,7 @@ def main():
         print("Nenhum dado disponível para treino no banco de dados.")
 
     # Fechar conexão com o Banco de Dados
-    conn.close()
+    conn.dispose()
 
 cidade = "São Paulo"
 print(f"Buscando dados de clima para {cidade}")
