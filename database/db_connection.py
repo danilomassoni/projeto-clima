@@ -18,3 +18,20 @@ def connect_to_postgresql():
     except Exception as e:
         print(f"Erro ao conectar ao banco de dados: {e}")
         return None
+    
+def get_connection_string(user, password, host, port, db_name):
+    """
+    Retorna a string de conexão para o banco PostgreSQL
+
+    Args:
+        user (str): Usuário do banco.
+        password (str): Senha do banco.
+        host (str): host do banco.
+        port (int): Porta do banco.
+        db_name (str): Nome do banco.
+    
+    Returns: 
+        str: String de conexão
+             
+    """
+    return f'postgresql://{user}:{password}@{host}:{port}/{db_name}'
