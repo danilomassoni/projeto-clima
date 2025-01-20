@@ -24,7 +24,7 @@ def main():
 
     # Inserir os dados no banco de dados PostgreSQL
     print("Inserindo os dados no banco de dados.....")
-    load_data_to_db(df, 'temperaturas', connection_string)
+    load_data_to_db(df, 'temperaturas_sp', connection_string)
     print("Processo de inserir dados concluído.")
 
 if __name__ == "__main__":
