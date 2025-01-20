@@ -1,7 +1,7 @@
 # Código para transformar os dados
 import pandas as pd
 import os
-
+import numpy as np
 
 
 def transform_data(filepath):
@@ -31,14 +31,26 @@ def transform_data(filepath):
     # Renomear e ajustar o formato
     df_formatado.rename(columns={'Anos/Meses': 'ano'}, inplace=True)
     
+    # Tratar valores da coluna 'temperatura'
+    def limpar_temperatura(valor):
+        try:
+            # Remover separadores de milher (caso exista) e substituir vírgulas por pontos
+            valor = str(valor).replace(',', '').replace(',', '.')
+            # Converter para float e arredondar para 2 casa decimais
+            return round(float(valor), 2)
+        except ValueError:
+            # Retornar NaN caso o valor não seja convertido corretamente
+            return np.nan
+
+
     # Verificar e corrigir os valores de temperatura
-    df_formatado['temperatura'] = df_formatado['temperatura'].apply(
-        lambda x: str(x).replace(',', '.') if isinstance(x, str) else x
-    )
+    df_formatado['temperatura'] = df_formatado['temperatura'].apply(limpar_temperatura)
 
     # Converter temperaturas para tipo float
     df_formatado['temperatura'] = pd.to_numeric(df_formatado['temperatura'], errors='coerce')
 
+    # Remover linhas com valores absurdos (se necessário, ajustar o limite)
+    df_formatado = df_formatado[(df_formatado['temperatura'] > -100) & (df_formatado['temperatura'] < 100)]
     return df_formatado
 
 
