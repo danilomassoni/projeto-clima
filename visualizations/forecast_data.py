@@ -28,7 +28,7 @@ def fetch_data_from_db(db_config, query):
         print(f"Erro ao buscar dados do banco: {e}")
         return None
 
-def forecast_climate(db_config, years_to_predict=5):
+def forecast_climate(db_config, years_to_predict=20):
     """
     Previsão do clima nos próximos anos com base nos dados históricos do banco.
 
@@ -98,8 +98,8 @@ if __name__ == "__main__":
         'port': 5432
     }
 
-    # Prever o clima nos próximos 5 anos
-    forecast_df = forecast_climate(db_config, years_to_predict=5)
+    # Prever o clima nos próximos 20 anos
+    forecast_df = forecast_climate(db_config, years_to_predict=20)
 
     # Salvar o resultado da previsão
     if forecast_df is not None:
