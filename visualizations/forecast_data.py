@@ -13,7 +13,7 @@ def fetch_data_from_db(db_config, query):
         db_config (dict): Configurações do banco.
         query (str): Consulta SQL a ser executada.
 
-    Returns:
+    Returns:s
         pd.DataFrame: Dados retornados pelo banco em formato DataFrame.
     """
     try:
