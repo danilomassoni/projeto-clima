@@ -1,0 +1,8 @@
+# Documentação do projeto
+
+dash
+pandas
+sqlalchemy
+prophet
+matplotlib
+psycopg2-binary
