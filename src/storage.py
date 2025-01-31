@@ -1,0 +1,1 @@
+# Classe para salvar previsões em banco de dados

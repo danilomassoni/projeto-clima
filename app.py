@@ -1,93 +1,57 @@
-# Arquivo principal para execução do projeto
-import pandas as pd
-from api.api_client import fetch_weather_from_api
-from database.db_connection import connect_to_postgresql
-from database.data_operations import fetch_weather_data_from_db, insert_weather_data
-from models.regression_model import train_regression_model
-from visualizations.plot_utils import plot_real_vs_predicted
-from datetime import datetime
+# Arquivo principal para rodar o projet
+import dash 
+from dash import dcc, html
+from dash.dependencies import Input, Output
+import plotly.graph_objs as go 
+from src.data_loader import DataLoader 
+from src.model import ClimateModel
 
-def main():
-    # Conectar com o banco de dados PostgreSQL
-    conn = connect_to_postgresql()
-    if not conn:
-        print("Falha na conexão com o banco de dados.")
-        return
+app = dash.Dash(__name__)
+app.title = "Previsão Climática - São Paulo"
 
-    # 1 - Obter dados da API para a cidade de São Paulo
-    cidade = "São Paulo"
-    print(f"Buscando dados de clima para a cidade de {cidade}.....")
-    dados_clima = fetch_weather_from_api(cidade)
-
-    if dados_clima:
-        # 2 Inserir dados no banco de dados
-        weather_data = [(dados_clima['cidade'], dados_clima['temperatura'],
-                                        dados_clima['umidade'], dados_clima['descricao'], dados_clima['data_consulta'])]
-        
-        print(f"Inserindo dados de {cidade} no banco de dados....")
-        print("Dados para inserção:", weather_data)
-              
-        try:
-            insert_weather_data(conn, weather_data)
-                                    
-        except Exception as e:
-            print(f"Erro ao inserir dados no banco: {e}")
-    else:
-        print(f"Erro: Os dados retornados não são válidos.")
-
-    # 3 - Consultar os dados do banco de dados
-    query = "SELECT cidade, temperatura, umidade, descricao, data_consulta FROM clima WHERE cidade = 'São Paulo'"
-    df = fetch_weather_data_from_db(conn, query)
-
-    # 4 Treinar o modelo de regressão
-    if not df.empty:
-        # Adicionar a coluna 'dia do ano'
-        df['data_consulta'] = pd.to_datetime(df['data_consulta'], errors='coerce')
-        df['dia_do_ano'] = df['data_consulta'].dt.dayofyear
-
-        # Garantir que as colunas de entrada (umidade e dia_do_ano) são númericas
-        df['umidade'] = pd.to_numeric(df['umidade'], errors='coerce')
-        df['dia_do_ano'] = pd.to_numeric(df['dia_do_ano'], errors='coerce')
-
-        # Remover linhas com valores ausentes, se houver
-        df = df.dropna(subset=['umidade', 'dia_do_ano'])
-
-        # Verificar os tipos da coluna 
-        print(df.dtypes)
-
-        # Vericiar os tipos da coluna e amostra dos dados
-        print("Tipos de dados das colunas:", df.dtypes)
-        print("Amostra dos dados:", df.head())
-
-        if df.empty:
-            print("Não há dados suficientes para treinar o modelo")
-            return
-
-        # Verificar os tipos da scolunas 
-        print(df.dtypes)
+# Carregar os dados históricos usando a classe DataLoader
+data_loader = DataLoader('data\processed\dataframe_formatado.csv')
+df_historico = data_loader.load_data()
 
 
-        print("Treinando modelo de regressão")
-        modelo, score = train_regression_model(df)
-        print(f"Modelo treinado com sucesso! Acurácia do modelo: {score:.2f}")
+# Layout da Dashboard
+app.layout = html.Div([
+    html.H1("Previsão do Clima em São Paulo", style={'textAlign': 'center'}),
+    html.Div([
+        html.Label("Quantos anos deseja prever?"),
+        dcc.Input(id="yaers_input", type="number", value=5, min=1, max=20, step=1),
+        html.Button("Atualizar Previsão", id="submit_button", n_clicks=0)
+    ], style={'margin': '20px'}),
 
-        # 5 - Visualizar os resultados
-        print("Gerando gráficos de comparação......")
-        y_real = df['temperatura']
-        y_pred = modelo.predict(df[['umidade', 'dia_do_ano']])
-        plot_real_vs_predicted(y_real, y_pred)
+    dcc.Graph(id="forecast_graph")
+])
 
-    else:
-        print("Nenhum dado disponível para treino no banco de dados.")
+#Callback para atualizar a previsão
+@app.callback(
+    Output("forecast_graph", "figure"),
+    Input("submit_button", 'n_clicks'),
+    Input("years_input", "value")
+)
 
-    # Fechar conexão com o Banco de Dados
-    conn.dispose()
+def update_forecast(n_clicks, years_to_predict):
+    if not years_to_predict or years_to_predict < 1:
+        return {}
 
-cidade = "São Paulo"
-print(f"Buscando dados de clima para {cidade}")
-dados_clima = fetch_weather_from_api(cidade)
-print("Retorno de tech_weather_from_api:", dados_clima)
+    # Criar e treinar o modelo
+    climate_model = ClimateModel(df_historico)
+    climate_model.train()
+    forecast = climate_model.forecast(years_to_predict)
+
+    # Criar gráfico
+    data = [
+        go.Scatter(x=forecast['ds'], y=forecast['yhat'], mode='lines', name='Previsão'),
+        go.Scatter(x=forecast['ds'], y=forecast['yhat_lower'], mode='lines', name='Limite Inferior', line=dict(dash='dot')),
+        go.Scatter(x=forecast['ds'], y=forecast['yhat_upper'], mode='lines', name='Limite Superior', line=dict(dash='dot'))
+    ]
+
+    return {'data': data, 'layout': go.Layout(title="PRevisão de temperatura", xaxix_title="Ano", yaxis_title="Temperatura (ºC)")}
 
 
+# Rodar o servidor 
 if __name__ == "__main__":
-    main()
+    app.run_server(debug=True) # http://127.0.0.1:8050/
