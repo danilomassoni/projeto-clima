@@ -5,13 +5,20 @@ from dash.dependencies import Input, Output
 import plotly.graph_objs as go 
 from src.data_loader import DataLoader 
 from src.model import ClimateModel
+from src.database import Database
 
 app = dash.Dash(__name__)
 app.title = "Previsão Climática - São Paulo"
 
+# Inicializar conexão com o banco e criar a tabela
+db = Database()
+db.create_table()
+
 # Carregar os dados históricos usando a classe DataLoader
 data_loader = DataLoader(r'data\processed\dataframe_formatado.csv')
 df_historico = data_loader.load_data()
+
+
 
 
 # Layout da Dashboard
@@ -20,7 +27,7 @@ app.layout = html.Div([
 
     html.Div([
         html.Label("Quantos anos deseja prever?"),
-        dcc.Input(id="years_input", type="number", value=5, min=1, max=20, step=1),
+        dcc.Input(id="years_input", type="number", value=5, min=1, max=50, step=1),
         html.Button("Atualizar Previsão", id="submit_button", n_clicks=0)
     ], style={'margin': '20px'}),
 

@@ -5,7 +5,7 @@ from psycopg2 import sql
 import pandas as pd
 
 class Database: 
-    def __init__(self, dbname="previsao_climatica", user="postgre", password="1234", host="localhost", port="5432"):
+    def __init__(self, dbname="previsao_climatica", user="postgres", password="1234", host="localhost", port="5432"):
         self.dbname = dbname
         self.user=user
         self.password = password
@@ -20,7 +20,6 @@ class Database:
                 dbname=self.dbname,
                 user=self.user,
                 password = self.password,
-                host=self.password,
                 host=self.host,
                 port=self.port
             )
@@ -39,7 +38,7 @@ class Database:
                         CREATE TABLE IF NOT EXISTS previsoes (
                             id SERIAL PRIMARY KEY, 
                             data DATE NOT NULL,
-                            yhat FLOAT NUT NULL,
+                            yhat FLOAT NOT NULL,
                             yhat_lower FLOAT NOT NULL,
                             yhat_upper FLOAT NOT NULL
                         );
