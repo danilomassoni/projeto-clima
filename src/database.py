@@ -3,6 +3,7 @@
 import psycopg2
 from psycopg2 import sql
 import pandas as pd
+from datetime import datetime  # <-- Importação necessária para salvar a data/hora
 
 class Database: 
     def __init__(self, dbname="previsao_climatica", user="postgres", password="1234", host="localhost", port="5432"):
@@ -40,7 +41,8 @@ class Database:
                             data DATE NOT NULL,
                             yhat FLOAT NOT NULL,
                             yhat_lower FLOAT NOT NULL,
-                            yhat_upper FLOAT NOT NULL
+                            yhat_upper FLOAT NOT NULL,
+                            data_previsao TIMESTAMP DEFAULT CURRENT_TIMESTAMP  -- <-- Adicionando a nova coluna
                         );
                 """)
                 self.conn.commit()
@@ -57,19 +59,19 @@ class Database:
         try:
             with self.conn.cursor() as cur:
                 for _, row in forecast_df.iterrows():
-                    print(f"Inserindo: {row['ds']}, {row['yhat']}, {row['yhat_lower']}, {row['yhat_upper']}")  # <-- Adicionamos um print aqui
+                    print(f"Inserindo: {row['ds']}, {row['yhat']}, {row['yhat_lower']}, {row['yhat_upper']}, {datetime.now()}")  # <-- Print atualizado
+
                     cur.execute("""
-                        INSERT INTO previsoes (data, yhat, yhat_lower, yhat_upper)
-                        VALUES (%s, %s, %s, %s);
-                    """, (row['ds'], row['yhat'], row['yhat_lower'], row['yhat_upper']))
+                        INSERT INTO previsoes (data, yhat, yhat_lower, yhat_upper, data_previsao)
+                        VALUES (%s, %s, %s, %s, %s);
+                    """, (row['ds'], row['yhat'], row['yhat_lower'], row['yhat_upper'], datetime.now()))
                 
                 self.conn.commit()
-                print("✅ Previsões salvas no banco!")
+                print("✅ Previsões salvas no banco com timestamp!")
+
         except Exception as e:
             print(f"❌ Erro ao salvar previsões: {e}")
 
-
-        
     def close_connection(self):
         """Fecha a conexão com o banco de dados."""
         if self.conn:
