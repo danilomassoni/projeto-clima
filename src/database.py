@@ -49,24 +49,25 @@ class Database:
         except Exception as e:
             print(f"Erro ao criar a tabela: {e}")
 
-    def save_forecast(self, forecast_df: pd.DataFrame):
-        """Salva as previsões no banco de dados."""
+    def save_forecast(self, forecast_df):
+        """Salva previsões no banco de dados"""
         if self.conn is None:
             self.connect()
 
         try:
             with self.conn.cursor() as cur:
-                for _, row in forecast_df.itrrows():
+                for _, row in forecast_df.iterrows():
+                    print(f"Inserindo: {row['ds']}, {row['yhat']}, {row['yhat_lower']}, {row['yhat_upper']}")  # <-- Adicionamos um print aqui
                     cur.execute("""
                         INSERT INTO previsoes (data, yhat, yhat_lower, yhat_upper)
                         VALUES (%s, %s, %s, %s);
-                    """, (row['ds'], row['yhat'], row['yhat_lower'], row['yhat_upper']))   
+                    """, (row['ds'], row['yhat'], row['yhat_lower'], row['yhat_upper']))
                 
                 self.conn.commit()
-                print("Previsões salvas com sucesso!")
-
+                print("✅ Previsões salvas no banco!")
         except Exception as e:
-            print(f"Erro ao salvar previsões {e}")
+            print(f"❌ Erro ao salvar previsões: {e}")
+
 
         
     def close_connection(self):
